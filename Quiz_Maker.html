@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Online Quiz Maker</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
+    body {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      min-height: 100vh;
+      color: #222;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1000px;
+      margin: auto;
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.2);
+      overflow: hidden;
+    }
+    header {
+      background: #4f46e5;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      background: #eef2ff;
+      padding: 15px;
+    }
+    nav button {
+      border: none;
+      padding: 12px 18px;
+      border-radius: 10px;
+      background: #4f46e5;
+      color: white;
+      cursor: pointer;
+      transition: 0.3s;
+      font-weight: bold;
+    }
+    nav button:hover { background: #3730a3; }
+    .page { display: none; padding: 25px; }
+    .page.active { display: block; }
+    h2 { margin-bottom: 15px; color: #4f46e5; }
+    .card {
+      background: #f9fafb;
+      padding: 18px;
+      border-radius: 14px;
+      margin-bottom: 20px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+    }
+    input, textarea, select {
+      width: 100%;
+      padding: 12px;
+      margin: 8px 0 14px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      font-size: 15px;
+    }
+    textarea { resize: vertical; }
+    .option-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .btn {
+      display: inline-block;
+      background: #10b981;
+      color: white;
+      border: none;
+      padding: 12px 18px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: 0.3s;
+    }
+    .btn:hover { background: #059669; }
+    .btn-danger { background: #ef4444; }
+    .btn-danger:hover { background: #dc2626; }
+    .quiz-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 15px;
+      padding: 15px;
+      background: #f3f4f6;
+      border-radius: 12px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+    .hidden { display: none; }
+    .option-btn {
+      display: block;
+      width: 100%;
+      text-align: left;
+      background: #e5e7eb;
+      color: #111;
+      border: none;
+      padding: 12px;
+      border-radius: 10px;
+      margin: 8px 0;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    .option-btn:hover { background: #c7d2fe; }
+    .correct { background: #bbf7d0 !important; }
+    .wrong { background: #fecaca !important; }
+    .small { font-size: 14px; color: #555; }
+    .auth-box {
+      max-width: 420px;
+      margin: auto;
+    }
+    .welcome {
+      text-align: center;
+      padding: 30px 15px;
+    }
+    .welcome h1 { color: #4f46e5; margin-bottom: 10px; }
+    .welcome p { color: #555; margin-bottom: 20px; }
+    @media (max-width: 700px) {
+      .option-group { grid-template-columns: 1fr; }
+      nav { flex-direction: column; }
+      .quiz-item { flex-direction: column; align-items: stretch; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>📝 Online Quiz Maker</h1>
+      <p>Create quizzes, take quizzes, and get instant results!</p>
+    </header>
+
+    <nav>
+      <button onclick="showPage('home')">Home</button>
+      <button onclick="showPage('quizzes')">Quiz Listing</button>
+      <button onclick="showPage('create')">Create Quiz</button>
+      <button onclick="showPage('login')" id="authNavBtn">Login / Register</button>
+      <button onclick="logout()" id="logoutBtn" class="hidden">Logout</button>
+    </nav>
+
+    <section id="home" class="page active">
+      <div class="welcome">
+        <h1>Welcome to the Quiz Platform</h1>
+        <p>Create your own quizzes or take quizzes made by others.</p>
+        <button class="btn" onclick="showPage('create')">Create a Quiz</button>
+        <button class="btn" style="margin-left:10px; background:#4f46e5;" onclick="showPage('quizzes')">Take a Quiz</button>
+      </div>
+    </section>
+
+    <section id="login" class="page">
+      <div class="auth-box card">
+        <h2>User Authentication</h2>
+        <input type="text" id="username" placeholder="Enter username" />
+        <input type="password" id="password" placeholder="Enter password" />
+        <button class="btn" onclick="registerUser()">Register</button>
+        <button class="btn" style="background:#4f46e5; margin-left:8px;" onclick="loginUser()">Login</button>
+        <p class="small" id="authMessage" style="margin-top:15px;"></p>
+      </div>
+    </section>
+
+    <section id="create" class="page">
+      <div class="card">
+        <h2>Create a New Quiz</h2>
+        <input type="text" id="quizTitle" placeholder="Quiz Title" />
+        <input type="text" id="quizDescription" placeholder="Short Description" />
+
+        <div id="questionsContainer"></div>
+
+        <button class="btn" onclick="addQuestionForm()">+ Add Question</button>
+        <button class="btn" style="background:#4f46e5; margin-left:8px;" onclick="saveQuiz()">Save Quiz</button>
+        <p class="small" id="createMessage" style="margin-top:15px;"></p>
+      </div>
+    </section>
+
+    <section id="quizzes" class="page">
+      <div class="card">
+        <h2>Available Quizzes</h2>
+        <div id="quizList"></div>
+      </div>
+    </section>
+
+    <section id="takeQuiz" class="page">
+      <div class="card">
+        <h2 id="takeQuizTitle">Take Quiz</h2>
+        <p id="quizProgress" class="small"></p>
+        <div id="questionArea"></div>
+        <button class="btn hidden" id="nextBtn" onclick="nextQuestion()">Next</button>
+      </div>
+    </section>
+
+    <section id="results" class="page">
+      <div class="card">
+        <h2>Quiz Results</h2>
+        <div id="resultArea"></div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    let currentUser = localStorage.getItem('currentUser') || null;
+    let quizzes = JSON.parse(localStorage.getItem('quizzes')) || [];
+    let users = JSON.parse(localStorage.getItem('users')) || [];
+    let currentQuiz = null;
+    let currentQuestionIndex = 0;
+    let score = 0;
+    let selectedAnswers = [];
+    let questionCount = 0;
+
+    function showPage(pageId) {
+      document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+      document.getElementById(pageId).classList.add('active');
+      if (pageId === 'quizzes') renderQuizList();
+      updateAuthUI();
+    }
+
+    function updateAuthUI() {
+      document.getElementById('authNavBtn').classList.toggle('hidden', !!currentUser);
+      document.getElementById('logoutBtn').classList.toggle('hidden', !currentUser);
+    }
+
+    function registerUser() {
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value.trim();
+      const msg = document.getElementById('authMessage');
+
+      if (!username || !password) {
+        msg.textContent = 'Please enter username and password.';
+        return;
+      }
+      if (users.find(u => u.username === username)) {
+        msg.textContent = 'Username already exists.';
+        return;
+      }
+      users.push({ username, password });
+      localStorage.setItem('users', JSON.stringify(users));
+      msg.textContent = 'Registration successful! You can now log in.';
+    }
+
+    function loginUser() {
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value.trim();
+      const msg = document.getElementById('authMessage');
+      const user = users.find(u => u.username === username && u.password === password);
+
+      if (user) {
+        currentUser = username;
+        localStorage.setItem('currentUser', currentUser);
+        msg.textContent = `Welcome, ${username}!`;
+        showPage('home');
+      } else {
+        msg.textContent = 'Invalid username or password.';
+      }
+    }
+
+    function logout() {
+      currentUser = null;
+      localStorage.removeItem('currentUser');
+      showPage('home');
+    }
+
+    function addQuestionForm() {
+      questionCount++;
+      const container = document.getElementById('questionsContainer');
+      const div = document.createElement('div');
+      div.className = 'card';
+      div.innerHTML = `
+        <h3>Question ${questionCount}</h3>
+        <input type="text" class="question" placeholder="Enter question" />
+        <div class="option-group">
+          <input type="text" class="option" placeholder="Option 1" />
+          <input type="text" class="option" placeholder="Option 2" />
+          <input type="text" class="option" placeholder="Option 3" />
+          <input type="text" class="option" placeholder="Option 4" />
+        </div>
+        <select class="correctAnswer">
+          <option value="">Select Correct Answer</option>
+          <option value="0">Option 1</option>
+          <option value="1">Option 2</option>
+          <option value="2">Option 3</option>
+          <option value="3">Option 4</option>
+        </select>
+        <button class="btn btn-danger" onclick="this.parentElement.remove()">Remove</button>
+      `;
+      container.appendChild(div);
+    }
+
+    function saveQuiz() {
+      const title = document.getElementById('quizTitle').value.trim();
+      const description = document.getElementById('quizDescription').value.trim();
+      const msg = document.getElementById('createMessage');
+
+      if (!currentUser) {
+        msg.textContent = 'Please login first to create a quiz.';
+        showPage('login');
+        return;
+      }
+      if (!title) {
+        msg.textContent = 'Please enter quiz title.';
+        return;
+      }
+
+      const questionCards = document.querySelectorAll('#questionsContainer .card');
+      const questions = [];
+
+      questionCards.forEach(card => {
+        const question = card.querySelector('.question').value.trim();
+        const options = [...card.querySelectorAll('.option')].map(opt => opt.value.trim());
+        const correctAnswer = card.querySelector('.correctAnswer').value;
+
+        if (question && options.every(o => o !== '') && correctAnswer !== '') {
+          questions.push({ question, options, correctAnswer: Number(correctAnswer) });
+        }
+      });
+
+      if (questions.length === 0) {
+        msg.textContent = 'Add at least one complete question.';
+        return;
+      }
+
+      quizzes.push({ id: Date.now(), title, description, creator: currentUser, questions });
+      localStorage.setItem('quizzes', JSON.stringify(quizzes));
+
+      document.getElementById('quizTitle').value = '';
+      document.getElementById('quizDescription').value = '';
+      document.getElementById('questionsContainer').innerHTML = '';
+      questionCount = 0;
+      msg.textContent = 'Quiz saved successfully!';
+      renderQuizList();
+    }
+
+    function renderQuizList() {
+      const quizList = document.getElementById('quizList');
+      quizList.innerHTML = '';
+
+      if (quizzes.length === 0) {
+        quizList.innerHTML = '<p>No quizzes available yet.</p>';
+        return;
+      }
+
+      quizzes.forEach(quiz => {
+        const div = document.createElement('div');
+        div.className = 'quiz-item';
+        div.innerHTML = `
+          <div>
+            <h3>${quiz.title}</h3>
+            <p>${quiz.description || 'No description provided.'}</p>
+            <p class="small">Created by: ${quiz.creator}</p>
+          </div>
+          <button class="btn" onclick="startQuiz(${quiz.id})">Take Quiz</button>
+        `;
+        quizList.appendChild(div);
+      });
+    }
+
+    function startQuiz(id) {
+      currentQuiz = quizzes.find(q => q.id === id);
+      currentQuestionIndex = 0;
+      score = 0;
+      selectedAnswers = [];
+      document.getElementById('takeQuizTitle').textContent = currentQuiz.title;
+      showPage('takeQuiz');
+      renderQuestion();
+    }
+
+    function renderQuestion() {
+      const q = currentQuiz.questions[currentQuestionIndex];
+      const area = document.getElementById('questionArea');
+      const progress = document.getElementById('quizProgress');
+      const nextBtn = document.getElementById('nextBtn');
+      nextBtn.classList.add('hidden');
+
+      progress.textContent = `Question ${currentQuestionIndex + 1} of ${currentQuiz.questions.length}`;
+      area.innerHTML = `<h3>${q.question}</h3>`;
+
+      q.options.forEach((opt, index) => {
+        const btn = document.createElement('button');
+        btn.className = 'option-btn';
+        btn.textContent = opt;
+        btn.onclick = () => selectAnswer(index, btn);
+        area.appendChild(btn);
+      });
+    }
+
+    function selectAnswer(selectedIndex, selectedBtn) {
+      const q = currentQuiz.questions[currentQuestionIndex];
+      const buttons = document.querySelectorAll('.option-btn');
+      buttons.forEach(btn => btn.disabled = true);
+
+      selectedAnswers.push({
+        question: q.question,
+        selected: selectedIndex,
+        correct: q.correctAnswer,
+        options: q.options
+      });
+
+      if (selectedIndex === q.correctAnswer) {
+        score++;
+        selectedBtn.classList.add('correct');
+      } else {
+        selectedBtn.classList.add('wrong');
+        buttons[q.correctAnswer].classList.add('correct');
+      }
+
+      document.getElementById('nextBtn').classList.remove('hidden');
+    }
+
+    function nextQuestion() {
+      currentQuestionIndex++;
+      if (currentQuestionIndex < currentQuiz.questions.length) {
+        renderQuestion();
+      } else {
+        showResults();
+      }
+    }
+
+    function showResults() {
+      showPage('results');
+      const resultArea = document.getElementById('resultArea');
+      resultArea.innerHTML = `
+        <h3>Your Score: ${score} / ${currentQuiz.questions.length}</h3>
+        <hr style="margin:15px 0;">
+      `;
+
+      selectedAnswers.forEach((item, i) => {
+        resultArea.innerHTML += `
+          <div class="card">
+            <h4>Q${i + 1}: ${item.question}</h4>
+            <p><strong>Your Answer:</strong> ${item.options[item.selected]}</p>
+            <p><strong>Correct Answer:</strong> ${item.options[item.correct]}</p>
+          </div>
+        `;
+      });
+    }
+
+    addQuestionForm();
+    updateAuthUI();
+    renderQuizList();
+  </script>
+</body>
+</html>
